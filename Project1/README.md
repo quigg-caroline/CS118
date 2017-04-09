@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # CS118 Project 1
 
 Template for for [UCLA CS118 Spring 2017 Project 1](http://web.cs.ucla.edu/classes/spring17/cs118/project-1.html)
@@ -25,4 +26,4 @@ You are encouraged to host your code in private repositories on [GitHub](https:/
     ##                                                       ##
     ## REPLACE CONTENT OF THIS FILE WITH YOUR PROJECT REPORT ##
     ##                                                       ##
-    ###########################################################
+    ########################################################### 
