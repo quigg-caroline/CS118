@@ -10,6 +10,7 @@
 #include <cerrno>
 #include <cstring>
 #include <netdb.h>
+#include <fstream>
 
 #define BACKLOG 10
 using namespace std;
@@ -27,7 +28,7 @@ int main(int argc, char** argv)
   hints.ai_socktype = SOCK_STREAM; //TCP stream sockets
   hints.ai_flags = AI_PASSIVE; //fill in IP for me
   
-  if ((status = getaddrinfo(NULL, /*argv[1]*/ "40000", &hints, &servinfo)) != 0)
+  if ((status = getaddrinfo(NULL, argv[1], &hints, &servinfo)) != 0)
     {
       cerr << "ERROR: getaddrinfo error " << gai_strerror(status) << endl;
       exit(1);
@@ -78,11 +79,27 @@ int main(int argc, char** argv)
 
   cout<< "Accepted connection number " << count << endl;
 
+  //open file to write to
+  string title = argv[2];
+  title = title + "/" + to_string(1) + ".file";
+
+  ofstream file;
+  file.open(title);
+  
+  //read from client
+  char buffer[100];
+  memset(&buffer, 0 , sizeof(buffer));
+  read(client_fds[0], buffer, sizeof(buffer));
+
+  file << buffer;
+  
   
   for (int i =0 ; i< count; i++)
     {
       close(client_fds[i]);
     }
+
+  file.close();
   
   //free serv addr
   close (sockfd);

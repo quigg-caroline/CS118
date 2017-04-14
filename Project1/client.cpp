@@ -67,7 +67,22 @@ int main(int argc, char* argv[])
       close (sockfd);
       exit(1);
     }
-  sleep(3);
+
+
+  //open file and get its size
+  FILE* fs = fopen(argv[3], "r");
+  fseek(fs, 0, SEEK_END);
+  unsigned long size = ftell(fs);
+  fseek(fs, 0, SEEK_SET);
+  //copy to buffer
+  char* buffer = (char*)malloc(sizeof(char) * size);
+  unsigned long r = fread(buffer, sizeof(char), size, fs);
+  
+  //see if server can be written to
+  
+  //write to server
+  r = write(sockfd, buffer, size);
+  
   close(sockfd);
   exit(1);
     
