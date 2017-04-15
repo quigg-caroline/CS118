@@ -14,6 +14,12 @@
 using namespace std;
 int main(int argc, char* argv[])
 {
+  if (argc != 4)
+    {
+      cout << "ERROR: Wrong arguments " <<endl;
+      exit(1);
+    }
+  
   struct addrinfo hints;
   struct addrinfo* res;
   memset(&hints, 0, sizeof hints);
@@ -63,7 +69,7 @@ int main(int argc, char* argv[])
   int status =  select (sockfd+1, NULL, &set, NULL, &timeout);
   if (status == 0 )
     {
-      cerr << "ERROR: timeout" << endl;
+      cerr << "ERROR: connection timeout" << endl;
       close (sockfd);
       exit(1);
     }
@@ -76,12 +82,38 @@ int main(int argc, char* argv[])
   fseek(fs, 0, SEEK_SET);
   //copy to buffer
   char* buffer = (char*)malloc(sizeof(char) * size);
-  unsigned long r = fread(buffer, sizeof(char), size, fs);
+  long long r = fread(buffer, sizeof(char), size, fs);
   
-  //see if server can be written to
   
-  //write to server
-  r = write(sockfd, buffer, size);
+  r = 0;
+
+  //write to server, multiple times if needed
+  while (r < (long long)size && r != -1)
+    {
+      //check if server can be written to
+      FD_ZERO(&set);
+      FD_SET(sockfd, &set);
+      select(sockfd+1, NULL, &set, NULL, &timeout);
+      if (FD_ISSET(sockfd, &set))
+	{
+	  //write to server
+	  size = size - r;
+	  r = write (sockfd, buffer, size);
+	}
+      else
+       {
+	 //connection timeout
+	 close(sockfd);
+	 cout << "ERROR: send timeout " <<endl;
+	 exit(1);
+       }
+    }
+
+  if (r == -1)
+    {
+      cout << "ERROR: send error - " << strerror(errno) << endl;
+      exit(1);
+    }
   
   close(sockfd);
   exit(1);

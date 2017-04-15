@@ -89,7 +89,7 @@ int main(int argc, char** argv)
   //read from client
   char buffer[100];
   memset(&buffer, 0 , sizeof(buffer));
-  read(client_fds[0], buffer, sizeof(buffer));
+  read(client_fds[0], buffer, sizeof(char));
 
   file << buffer;
   
