@@ -12,6 +12,7 @@
 #include <netdb.h>
 #include <fstream>
 #include <csignal>
+#include <thread>
 
 #define BACKLOG 10
 using namespace std;
@@ -35,7 +36,55 @@ void sig_handler(int signum)
 }
 
 //read data from a specific client
+void client(int count, string dir)
+{
+   cout<< "Accepted connection number " << count << endl;
 
+  //open file to write to
+  string title = dir;
+  title = title + "/" + to_string(count+1) + ".file";
+
+  ofstream file;
+  file.open(title);
+
+  struct timeval timeout;
+  timeout.tv_sec = 10;
+  timeout.tv_usec = 0;
+  
+  //see if there is data from client
+  fd_set set;
+
+  while (1)
+    {
+      FD_ZERO(&set);
+      FD_SET(client_fds[count], &set);
+  
+      select(client_fds[count] + 1, &set, NULL, NULL, &timeout);
+
+      if (FD_ISSET(client_fds[count], &set))
+	{
+	  //read from client
+	  char buffer[100];
+	  memset(&buffer, 0 , sizeof(buffer));
+	  
+	  long r  =recv(client_fds[count], buffer, sizeof(buffer),0);
+	  //check if client terminated
+	  if (r == 0)
+	    {
+	      break;
+	    }
+	  file << buffer;
+	}
+
+      else
+	{
+	  file << "ERROR: client aborted";
+	  break;
+	}
+    }
+    close(client_fds[count]);
+    file.close();
+}
 
 int main(int argc, char** argv)
 {
@@ -90,63 +139,21 @@ int main(int argc, char** argv)
     }
 
   //accept new connection(s)
-  client_fds[count] = accept(sockfd, (struct sockaddr*) &clientAddrs[count],&addr_size);
-  if (client_fds[count] == -1)
-    {
-      cerr<< "ERROR: accept error " << strerror(errno) << endl;
-      exit(1);
-    }
-  count++;
+  while(1)
+    {  
 
-  //start new thread for client
-
-  cout<< "Accepted connection number " << count << endl;
-
-  //open file to write to
-  string title = argv[2];
-  title = title + "/" + to_string(1) + ".file";
-
-  ofstream file;
-  file.open(title);
-
-  struct timeval timeout;
-  timeout.tv_sec = 10;
-  timeout.tv_usec = 0;
-  
-  //see if there is data from client
-  fd_set set;
-
-  while (1)
-    {
-      FD_ZERO(&set);
-      FD_SET(client_fds[0], &set);
-  
-      select(client_fds[0] + 1, &set, NULL, NULL, &timeout);
-
-      if (FD_ISSET(client_fds[0], &set))
+      client_fds[count] = accept(sockfd, (struct sockaddr*) &clientAddrs[count],&addr_size);
+      if (client_fds[count] == -1)
 	{
-	  //read from client
-	  char buffer[100];
-	  memset(&buffer, 0 , sizeof(buffer));
-	  
-	  long r  =recv(client_fds[0], buffer, sizeof(buffer),0);
-	  //check if client terminated
-	  if (r == 0)
-	    {
-	      break;
-	    }
-	  file << buffer;
+	  cerr<< "ERROR: accept error " << strerror(errno) << endl;
+	  exit(1);
 	}
-
-      else
-	{
-	  file << "ERROR: client aborted";
-	  break;
-	}
+      
+      //start new thread for client
+      thread t1(client, count, argv[2]);
+      t1.detach();
+      count++;
     }
-    close(client_fds[0]);
-    file.close();
-  
   //free serv addr
   close(sockfd);
   freeaddrinfo(servinfo);
