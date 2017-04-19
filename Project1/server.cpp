@@ -71,6 +71,7 @@ void client(int count, string dir)
 	  //check if client terminated
 	  if (r == 0)
 	    {
+	      file.close();
 	      break;
 	    }
 	  file << buffer;
@@ -78,12 +79,15 @@ void client(int count, string dir)
 
       else
 	{
-	  file << "ERROR: client aborted";
+	  //clear file and write error string
+	  file.close();
+	  file.open(title, ios::out|ios::trunc);
+	  file << "ERROR: client timout,aborted";
+	  file.close();
 	  break;
 	}
     }
     close(client_fds[count]);
-    file.close();
 }
 
 int main(int argc, char** argv)
